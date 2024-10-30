@@ -1,0 +1,61 @@
+version: "3.5"
+services:
+  firefox:
+    image: selenium/node-firefox:131.0-geckodriver-0.35-20241024
+    shm_size: 2gb
+    volumes:
+      - "../com.truecontext.prontoforms.pes.test.acceptance/selenium/src/test/resources/com/prontoforms/Files:/test_files"
+      - "../com.truecontext.prontoforms.pes.test.acceptance/selenium/build/downloads/:/tmp/downloads"
+    depends_on:
+      selenium-hub:
+        condition: service_healthy
+    environment:
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
+      - SE_NODE_MAX_SESSIONS=2
+      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
+      - SE_ENABLE_TRACING=false
+    healthcheck:
+      test: curl -s http://127.0.0.1:5555/status | grep firefox
+      interval: 10s
+      timeout: 2s
+      retries: 3
+      start_period: 5s
+      start_interval: 1s
+  firefox_video:
+    image: selenium/video:ffmpeg-7.1-20241024
+    depends_on:
+      firefox:
+        condition: service_healthy
+      selenium-hub:
+        condition: service_healthy
+    environment:
+      - DISPLAY_CONTAINER_NAME=firefox
+      - SE_NODE_GRID_URL=http://selenium-hub:4444
+      - SE_VIDEO_FILE_NAME=auto
+      - SE_ENABLE_TRACING=false
+      # - SE_STRUCTURED_LOGS=true
+      - SE_LOG_LEVEL=ALL
+      - LOG_LEVEL=DEBUG
+      - SE_SUPERVISORD_LOG_LEVEL=debug
+      - SE_HTTP_LOGS=true
+  selenium-hub:
+    image: selenium/hub:4.25.0-20241024
+    container_name: selenium-hub
+    environment:
+      - SE_ENABLE_TRACING=false
+      # - SE_STRUCTURED_LOGS=true
+      - SE_LOG_LEVEL=ALL
+      - SE_HTTP_LOGS=true
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:4444/status"]
+      interval: 30s
+      timeout: 2s
+      retries: 2
+      start_period: 10s
+      start_interval: 1s

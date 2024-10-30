@@ -3,9 +3,6 @@ services:
   firefox:
     image: selenium/node-firefox:131.0-geckodriver-0.35-20241024
     shm_size: 2gb
-    volumes:
-      - "../com.truecontext.prontoforms.pes.test.acceptance/selenium/src/test/resources/com/prontoforms/Files:/test_files"
-      - "../com.truecontext.prontoforms.pes.test.acceptance/selenium/build/downloads/:/tmp/downloads"
     depends_on:
       selenium-hub:
         condition: service_healthy

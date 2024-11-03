@@ -1,17 +1,17 @@
 version: "3.5"
 services:
   firefox:
-    image: selenium/node-firefox:131.0-geckodriver-0.35-20241024
+    image: selenium/node-firefox:latest
     shm_size: 2gb
     depends_on:
       selenium-hub:
+        condition: service_healthy
+      firefox_video:
         condition: service_healthy
     environment:
       - SE_EVENT_BUS_HOST=selenium-hub
       - SE_EVENT_BUS_PUBLISH_PORT=4442
       - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
-      - SE_NODE_MAX_SESSIONS=2
-      - SE_NODE_OVERRIDE_MAX_SESSIONS=true
       - SE_ENABLE_TRACING=false
     healthcheck:
       test: curl -s http://127.0.0.1:5555/status | grep firefox
@@ -20,13 +20,9 @@ services:
       retries: 3
       start_period: 5s
       start_interval: 1s
+
   firefox_video:
-    image: selenium/video:ffmpeg-7.1-20241024
-    depends_on:
-      firefox:
-        condition: service_healthy
-      selenium-hub:
-        condition: service_healthy
+    image: selenium/video:latest
     environment:
       - DISPLAY_CONTAINER_NAME=firefox
       - SE_NODE_GRID_URL=http://selenium-hub:4444
@@ -37,8 +33,16 @@ services:
       - LOG_LEVEL=DEBUG
       - SE_SUPERVISORD_LOG_LEVEL=debug
       - SE_HTTP_LOGS=true
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://127.0.0.1:9000"]
+        interval: 10s
+        timeout: 2s
+        retries: 3
+        start_period: 5s
+        start_interval: 1s
+
   selenium-hub:
-    image: selenium/hub:4.25.0-20241024
+    image: selenium/hub:latest
     container_name: selenium-hub
     environment:
       - SE_ENABLE_TRACING=false
